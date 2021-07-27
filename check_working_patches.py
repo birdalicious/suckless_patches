@@ -10,9 +10,21 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 patchesDir = f'{dname}{SITES}/dwm.suckless.org/patches/'
 
-def updateRepos():
+def git_reset_clean(path):
     cwd = os.getcwd()
-    os.chdir(dname)
+    os.chdir(path)
+
+    process = subprocess.Popen(["git", "reset", "--hard"], stdout=subprocess.PIPE)
+    process.wait()
+    process = subprocess.Popen(["git", "clean", "-f"], stdout=subprocess.PIPE)
+    process.wait()
+
+    os.chdir(cwd)
+
+
+def updateRepos(path):
+    cwd = os.getcwd()
+    os.chdir(path)
 
     # Make sure the repos are downloaded
     if not os.path.isdir(SITES):
@@ -35,12 +47,14 @@ def updateRepos():
     print(f'{SITES}:')
     process = subprocess.Popen(["git", "pull", "origin", "master"], stderr=subprocess.PIPE)
     process.wait()
-    
+
     os.chdir(cwd)
+    git_reset_clean(os.path.join(path, DWM))
 
 
-def patchWorks(patch_path, dwm_path):
+def diffWorks(patch_path, dwm_path):
     cwd = os.getcwd()
+    patch_path = os.path.abspath(patch_path)
 
     os.chdir(dwm_path)
     copyfile(patch_path, './dwm-patch.diff')
@@ -49,13 +63,13 @@ def patchWorks(patch_path, dwm_path):
     process.wait()
     output = process.communicate()[1]
 
-    process = subprocess.Popen(["git", "reset", "--hard"], stdout=subprocess.PIPE)
-    process.wait()
-    process = subprocess.Popen(["git", "clean", "-f"], stdout=subprocess.PIPE)
-    process.wait()
-
     os.chdir(cwd)
+    git_reset_clean(dwm_path)
 
     if output == b'':
         return True
     return False
+
+
+updateRepos('./')
+print(diffWorks('./sites/dwm.suckless.org/patches/notitle/dwm-notitle-6.2.diff', './dwm'))
