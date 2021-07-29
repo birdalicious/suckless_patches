@@ -1,16 +1,15 @@
-From 805a29b9699a87c269a9f6c4f7c94a5e93d9a36b Mon Sep 17 00:00:00 2001
+From 36c4e246ad47333f2b8a82610ba2adebeb2043b2 Mon Sep 17 00:00:00 2001
 From: Jack Bird <jack.bird@durham.ac.uk>
-Date: Thu, 29 Jul 2021 18:49:03 +0100
-Subject: [PATCH] Able to focus on the master from anywhere in the stack and
- can also refocus on the client you switched focus from when the master is
- selected
+Date: Thu, 29 Jul 2021 21:39:33 +0100
+Subject: [PATCH] Able to switch to master from anywhere in the stack and can
+ also return to the previously selected client from the master
 
 ---
- dwm.c | 27 +++++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
+ dwm.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
 diff --git a/dwm.c b/dwm.c
-index 5e4d494..27dd391 100644
+index 5e4d494..eab8d57 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -127,6 +127,7 @@ struct Monitor {
@@ -29,7 +28,17 @@ index 5e4d494..27dd391 100644
  static void focusmon(const Arg *arg);
  static void focusstack(const Arg *arg);
  static Atom getatomprop(Client *c, Atom prop);
-@@ -816,6 +818,28 @@ focusin(XEvent *e)
+@@ -660,6 +662,9 @@ detach(Client *c)
+ {
+ 	Client **tc;
+ 
++	if (c == c->mon->stackfocused)
++		c->mon->stackfocused = NULL;
++
+ 	for (tc = &c->mon->clients; *tc && *tc != c; tc = &(*tc)->next);
+ 	*tc = c->next;
+ }
+@@ -816,6 +821,28 @@ focusin(XEvent *e)
  		setfocus(selmon->sel);
  }
  
@@ -58,20 +67,14 @@ index 5e4d494..27dd391 100644
  void
  focusmon(const Arg *arg)
  {
-@@ -2118,6 +2142,8 @@ zoom(const Arg *arg)
+@@ -1203,6 +1230,7 @@ nexttiled(Client *c)
+ void
+ pop(Client *c)
  {
- 	Client *c = selmon->sel;
- 
-+	selmon->stackfocused = nexttiled(selmon->clients);
-+
- 	if (!selmon->lt[selmon->sellt]->arrange
- 	|| (selmon->sel && selmon->sel->isfloating))
- 		return;
-@@ -2150,3 +2176,4 @@ main(int argc, char *argv[])
- 	XCloseDisplay(dpy);
- 	return EXIT_SUCCESS;
- }
-+
++	c->mon->stackfocused = nexttiled(c->mon->clients);
+ 	detach(c);
+ 	attach(c);
+ 	focus(c);
 -- 
 2.32.0
 
