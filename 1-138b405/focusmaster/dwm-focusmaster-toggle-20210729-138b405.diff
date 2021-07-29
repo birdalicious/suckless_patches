@@ -1,0 +1,77 @@
+From 805a29b9699a87c269a9f6c4f7c94a5e93d9a36b Mon Sep 17 00:00:00 2001
+From: Jack Bird <jack.bird@durham.ac.uk>
+Date: Thu, 29 Jul 2021 18:49:03 +0100
+Subject: [PATCH] Able to focus on the master from anywhere in the stack and
+ can also refocus on the client you switched focus from when the master is
+ selected
+
+---
+ dwm.c | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/dwm.c b/dwm.c
+index 5e4d494..27dd391 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -127,6 +127,7 @@ struct Monitor {
+ 	Client *clients;
+ 	Client *sel;
+ 	Client *stack;
++	Client *stackfocused;
+ 	Monitor *next;
+ 	Window barwin;
+ 	const Layout *lt[2];
+@@ -167,6 +168,7 @@ static void enternotify(XEvent *e);
+ static void expose(XEvent *e);
+ static void focus(Client *c);
+ static void focusin(XEvent *e);
++static void focusmaster(const Arg *arg);
+ static void focusmon(const Arg *arg);
+ static void focusstack(const Arg *arg);
+ static Atom getatomprop(Client *c, Atom prop);
+@@ -816,6 +818,28 @@ focusin(XEvent *e)
+ 		setfocus(selmon->sel);
+ }
+ 
++void
++focusmaster(const Arg *arg)
++{
++	Client *master;
++
++	if (selmon->nmaster > 1)
++		return;
++
++	master = nexttiled(selmon->clients);
++
++	if (!master)
++		return;
++
++	if (selmon->sel == master) {
++		if (master->mon->stackfocused)
++			focus(master->mon->stackfocused);
++	} else {
++		master->mon->stackfocused = master->mon->sel;
++		focus(master);
++	}
++}
++
+ void
+ focusmon(const Arg *arg)
+ {
+@@ -2118,6 +2142,8 @@ zoom(const Arg *arg)
+ {
+ 	Client *c = selmon->sel;
+ 
++	selmon->stackfocused = nexttiled(selmon->clients);
++
+ 	if (!selmon->lt[selmon->sellt]->arrange
+ 	|| (selmon->sel && selmon->sel->isfloating))
+ 		return;
+@@ -2150,3 +2176,4 @@ main(int argc, char *argv[])
+ 	XCloseDisplay(dpy);
+ 	return EXIT_SUCCESS;
+ }
++
+-- 
+2.32.0
+
