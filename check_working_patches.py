@@ -28,32 +28,44 @@ def git_reset_clean(path):
     os.chdir(cwd)
 
 
-def refreshRepo(path, tool, master='master'):
-    if tool not in TOOLS and tool != SITES:
-        raise ValueError(f'{tool} is not in the tool list: {TOOLS}')
-
+def git_get_shorthash(path):
     cwd = os.getcwd()
     os.chdir(path)
 
-    # Make sure the repo is downloaded
-    if not os.path.isdir(tool):
-        url = f'{SUCKLESS}{tool}'
-        print(f'Downloading {url}')
-        process = subprocess.Popen(["git", "clone", f"{url}"], stderr=subprocess.PIPE)
-        process.wait()
-        print('download complete')
+    process = subprocess.Popen(["git", "rev-parse", "--short", "HEAD"], stdout=subprocess.PIPE)
+    process.wait()
 
-    # Update repo
-    os.chdir(tool)
-    print(f'Updating {tool}:')
+    os.chdir(cwd)
+    return process.communicate()[0].decode('utf-8')[:-1]
+
+
+def cloneRepo(path, url):
+    cmd = ["git", "clone", url, path]
+
+    if os.path.isfile(path):
+        raise ValueError('path should point to a directory')
+
+    if os.path.isdir(path):
+        return
+
+    print(f'Downloading {url}')
+    process = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+    process.wait()
+    print('download complete')
+
+
+def updateRepo(path, master='master'):
+    cwd = os.getcwd()
+    os.chdir(path)
+    print(f'Updating {path}:')
     if not os.path.isdir('.git'):
-       print(f'ERROR: {os.path.join(path, tool)} not a git repo')
+       print(f'ERROR: {path} not a git repo')
        exit(1)
     process = subprocess.Popen(["git", "pull", "origin", master], stderr=subprocess.PIPE)
     process.wait()
 
     os.chdir(cwd)
-    git_reset_clean(os.path.join(path, tool))
+    git_reset_clean(path)
 
 
 def diffWorks(patch_path, tool_path):
