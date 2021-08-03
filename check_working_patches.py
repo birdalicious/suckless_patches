@@ -91,11 +91,11 @@ def diffWorks(patch_path, tool_path):
 
 def listPatches(tool, sites_path):
     patch_path = os.path.join(sites_path, PATCH_PATHS[tool])
-    return os.listdir(patch_path)
+    return [patch for patch in os.listdir(patch_path) if os.path.isdir(os.path.join(patch_path, patch))]
 
 def listPatchPaths(tool, sites_path):
     patch_path = os.path.join(sites_path, PATCH_PATHS[tool])
-    return [os.path.join(patch_path, patch) for patch in os.listdir(patch_path)]
+    return [os.path.join(patch_path, patch) for patch in listPatches(tool, sites_path)]
 
 def listDiffPaths(path):
     diffs = []
