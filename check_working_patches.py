@@ -16,6 +16,7 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 
 
+# Path to repo to reset
 def git_reset_clean(path):
     cwd = os.getcwd()
     os.chdir(path)
@@ -28,6 +29,7 @@ def git_reset_clean(path):
     os.chdir(cwd)
 
 
+# Path to repo to get the short hash of
 def git_get_shorthash(path):
     cwd = os.getcwd()
     os.chdir(path)
@@ -87,18 +89,35 @@ def diffWorks(patch_path, tool_path):
     return False
 
 
-def listPatchDirs(tool, sites_path):
+def listPatches(tool, sites_path):
     patch_path = os.path.join(sites_path, PATCH_PATHS[tool])
     return os.listdir(patch_path)
 
+def listPatchPaths(tool, sites_path):
+    patch_path = os.path.join(sites_path, PATCH_PATHS[tool])
+    return [os.path.join(patch_path, patch) for patch in os.listdir(patch_path)]
 
-def listDiffs(path):
+def listDiffPaths(path):
     diffs = []
     for root, dirs, files in os.walk(path, topdown=False):
         for file in files:
             if file.endswith('.diff'):
                 diffs.append(os.path.join(root, file))
     return diffs
+
+def listDiffs(path):
+    return [os.path.basename(diff) for diff in listDiffPaths(path)]
+
+
+def countWorking(patchWorksDict):
+    c = 0
+    for patch in patchWorksDict:
+        if patchWorksDict[patch]:
+            c += 1
+    return c
+
+def countBroken(patchWorksDict):
+    return len(patchWorksDict.keys()) - countWorking(patchWorksDict)
 
 
 def main():
@@ -116,20 +135,42 @@ def main():
         args.tool_path = os.path.join(dname, args.tool)
     if not args.sites_path:
         args.sites_path = os.path.join(dname, SITES)
+    
+
+    if args.tool not in TOOLS:
+        raise ValueError(f'{args.tool} is not in the tool list: {list(TOOLS)}')
+
+    # Repo management
+    cloneRepo(args.tool_path, f'{SUCKLESS}{args.tool}')
+    cloneRepo(args.sites_path, f'{SUCKLESS}{SITES}')
+    updateRepo(args.tool_path)
+    updateRepo(args.sites_path)
+
+    # Set default output file
+    SHORTHASH = git_get_shorthash(args.tool_path)
+    if not args.output:
+        args.output = os.path.join(dname, f'{args.tool}-{SHORTHASH}-broken.md')
+
+    patchWorksDict = {}
+    # Check patchs can be applied
+    for path in listPatchPaths(args.tool, args.sites_path):
+        patch = os.path.basename(path)
+        works = False
+        for diff in listDiffPaths(path):
+            if diffWorks(diff, args.tool_path):
+                works = True
+                break
+        patchWorksDict[patch] = works
+        print(patch, works)
+    
+    # Output
+    with open(args.output, "w") as f:
+        for patch in sorted(list(patchWorksDict.keys())):
+            if not patchWorksDict[patch]:
+                f.writelines(f'{patch}\n')
 
 
-    print(args.tool, args.tool_path)
-
-
-    #TODO
-    # Split refresh repo in to clone and update
-    # Clone first checks if the folder already exists, if not start the clone
-    # then update as normal
-    # this will allow for the tool and site path to be set by the user
-
-    refreshRepo(dname, args.tool)
-    refreshRepo(dname, SITES)
-
+    print(f'\n{countBroken(patchWorksDict)}/{len(patchWorksDict.keys())} broken patches')
 
 if __name__ == '__main__':
     main()
