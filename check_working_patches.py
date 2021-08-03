@@ -149,11 +149,15 @@ def main():
     # Set default output file
     SHORTHASH = git_get_shorthash(args.tool_path)
     if not args.output:
-        args.output = os.path.join(dname, f'{args.tool}-{SHORTHASH}-broken.md')
+        if args.patches != 'all':
+            args.output = os.path.join(dname, f'{args.tool}-patches-broken.md')
+        else:
+            args.output = os.path.join(dname, f'{args.tool}-{SHORTHASH}-broken.md')
 
     patchWorksDict = {}
+    patchList = listPatchPaths(args.tool, args.sites_path) if args.patches == 'all' else [os.path.join(args.sites_path,PATCH_PATHS[args.tool], patch) for patch in args.patches.split(',')]
     # Check patchs can be applied
-    for path in listPatchPaths(args.tool, args.sites_path):
+    for path in patchList:
         patch = os.path.basename(path)
         works = False
         for diff in listDiffPaths(path):
