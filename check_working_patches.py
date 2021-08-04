@@ -1,3 +1,4 @@
+#!/bin/python
 import os
 import subprocess
 import argparse
@@ -8,7 +9,9 @@ SITES = "sites"
 PATCH_PATHS = {
     "dwm"   :   "dwm.suckless.org/patches",
     "st"    :   "st.suckless.org/patches",
-    "dmenu" :   "tools.suckless.org/dmenu/patches"
+    "surf"  :   "surf.suckless.org/patches",
+    "dmenu" :   "tools.suckless.org/dmenu/patches",
+    "ii"    :   "tools.suckless.org/ii/patches",
 }
 TOOLS = PATCH_PATHS.keys()
 
