@@ -1,45 +1,25 @@
-From 3e13223ca6a5b153ceb4de7b176446c12784fffc Mon Sep 17 00:00:00 2001
+From 6c6a6cfaa73bfd24014df5c810cc78756ec325b4 Mon Sep 17 00:00:00 2001
 From: Jack Bird <jack.bird@durham.ac.uk>
 Date: Wed, 4 Aug 2021 20:27:23 +0100
 Subject: [PATCH] Focus master and return supported over all tags
 
 ---
- dwm.c | 80 +++++++++++++++++++++++++++++++++++++++++++----------------
- 1 file changed, 59 insertions(+), 21 deletions(-)
+ dwm.c | 37 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
 
 diff --git a/dwm.c b/dwm.c
-index 5e4d494..97651df 100644
+index 5e4d494..dcb98b4 100644
 --- a/dwm.c
 +++ b/dwm.c
-@@ -111,27 +111,6 @@ typedef struct {
- 	void (*arrange)(Monitor *);
- } Layout;
- 
--struct Monitor {
--	char ltsymbol[16];
--	float mfact;
--	int nmaster;
--	int num;
--	int by;               /* bar geometry */
--	int mx, my, mw, mh;   /* screen size */
--	int wx, wy, ww, wh;   /* window area  */
--	unsigned int seltags;
--	unsigned int sellt;
--	unsigned int tagset[2];
--	int showbar;
--	int topbar;
--	Client *clients;
--	Client *sel;
--	Client *stack;
--	Monitor *next;
--	Window barwin;
--	const Layout *lt[2];
--};
--
- typedef struct {
- 	const char *class;
- 	const char *instance;
-@@ -167,6 +146,7 @@ static void enternotify(XEvent *e);
+@@ -127,6 +127,7 @@ struct Monitor {
+ 	Client *clients;
+ 	Client *sel;
+ 	Client *stack;
++	Client *tagmarked[32];
+ 	Monitor *next;
+ 	Window barwin;
+ 	const Layout *lt[2];
+@@ -167,6 +168,7 @@ static void enternotify(XEvent *e);
  static void expose(XEvent *e);
  static void focus(Client *c);
  static void focusin(XEvent *e);
@@ -47,37 +27,7 @@ index 5e4d494..97651df 100644
  static void focusmon(const Arg *arg);
  static void focusstack(const Arg *arg);
  static Atom getatomprop(Client *c, Atom prop);
-@@ -272,6 +252,29 @@ static Window root, wmcheckwin;
- /* configuration, allows nested code to access above variables */
- #include "config.h"
- 
-+struct Monitor {
-+	char ltsymbol[16];
-+	float mfact;
-+	int nmaster;
-+	int num;
-+	int by;               /* bar geometry */
-+	int mx, my, mw, mh;   /* screen size */
-+	int wx, wy, ww, wh;   /* window area  */
-+	unsigned int seltags;
-+	unsigned int sellt;
-+	unsigned int tagset[2];
-+	int showbar;
-+	int topbar;
-+	Client *clients;
-+	Client *sel;
-+	Client *stack;
-+	Client *tagmarked[LENGTH(tags) + 1];
-+	Monitor *next;
-+	Window barwin;
-+	const Layout *lt[2];
-+};
-+
-+
- /* compile-time check if all tags fit into an unsigned int bit array. */
- struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
- 
-@@ -660,6 +663,10 @@ detach(Client *c)
+@@ -660,6 +662,10 @@ detach(Client *c)
  {
  	Client **tc;
  
@@ -88,7 +38,7 @@ index 5e4d494..97651df 100644
  	for (tc = &c->mon->clients; *tc && *tc != c; tc = &(*tc)->next);
  	*tc = c->next;
  }
-@@ -816,6 +823,32 @@ focusin(XEvent *e)
+@@ -816,6 +822,32 @@ focusin(XEvent *e)
  		setfocus(selmon->sel);
  }
  
@@ -121,7 +71,7 @@ index 5e4d494..97651df 100644
  void
  focusmon(const Arg *arg)
  {
-@@ -1203,6 +1236,11 @@ nexttiled(Client *c)
+@@ -1203,6 +1235,11 @@ nexttiled(Client *c)
  void
  pop(Client *c)
  {
