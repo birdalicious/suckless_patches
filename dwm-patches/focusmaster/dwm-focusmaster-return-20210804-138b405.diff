@@ -1,14 +1,14 @@
-From 6c6a6cfaa73bfd24014df5c810cc78756ec325b4 Mon Sep 17 00:00:00 2001
+From db6a8931a55982b95ed24ef57c8b71a6a3dafab6 Mon Sep 17 00:00:00 2001
 From: Jack Bird <jack.bird@durham.ac.uk>
 Date: Wed, 4 Aug 2021 20:27:23 +0100
 Subject: [PATCH] Focus master and return supported over all tags
 
 ---
- dwm.c | 37 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 37 insertions(+)
+ dwm.c | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
 
 diff --git a/dwm.c b/dwm.c
-index 5e4d494..dcb98b4 100644
+index 5e4d494..ee28f28 100644
 --- a/dwm.c
 +++ b/dwm.c
 @@ -127,6 +127,7 @@ struct Monitor {
@@ -38,7 +38,7 @@ index 5e4d494..dcb98b4 100644
  	for (tc = &c->mon->clients; *tc && *tc != c; tc = &(*tc)->next);
  	*tc = c->next;
  }
-@@ -816,6 +822,32 @@ focusin(XEvent *e)
+@@ -816,6 +822,34 @@ focusin(XEvent *e)
  		setfocus(selmon->sel);
  }
  
@@ -48,6 +48,8 @@ index 5e4d494..dcb98b4 100644
 +	Client *master;
 +
 +	if (selmon->nmaster > 1)
++		return;
++	if (!selmon->sel || (selmon->sel->isfullscreen && lockfullscreen))
 +		return;
 +
 +	master = nexttiled(selmon->clients);
@@ -71,7 +73,7 @@ index 5e4d494..dcb98b4 100644
  void
  focusmon(const Arg *arg)
  {
-@@ -1203,6 +1235,11 @@ nexttiled(Client *c)
+@@ -1203,6 +1237,11 @@ nexttiled(Client *c)
  void
  pop(Client *c)
  {

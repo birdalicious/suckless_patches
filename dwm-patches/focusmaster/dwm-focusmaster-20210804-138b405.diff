@@ -21,7 +21,7 @@ index 9fd0286..be01927 100644
  /* variables */
  static const char broken[] = "broken";
  static char stext[256];
-@@ -2150,3 +2152,17 @@ main(int argc, char *argv[])
+@@ -2150,3 +2152,19 @@ main(int argc, char *argv[])
  	XCloseDisplay(dpy);
  	return EXIT_SUCCESS;
  }
