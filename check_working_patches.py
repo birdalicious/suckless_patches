@@ -90,10 +90,12 @@ def diffWorks(patch_path, tool_path):
 
 
 def listPatches(tool, sites_path):
+    checkTool(tool)
     patch_path = os.path.join(sites_path, PATCH_PATHS[tool])
     return [patch for patch in os.listdir(patch_path) if os.path.isdir(os.path.join(patch_path, patch))]
 
 def listPatchPaths(tool, sites_path):
+    checkTool(tool)
     patch_path = os.path.join(sites_path, PATCH_PATHS[tool])
     return [os.path.join(patch_path, patch) for patch in listPatches(tool, sites_path)]
 
@@ -120,9 +122,14 @@ def countBroken(patchWorksDict):
     return len(patchWorksDict.keys()) - countWorking(patchWorksDict)
 
 
+def checkTool(tool):
+    if tool in TOOLS:
+        return tool
+    raise ValueError(f'{tool} is not in the tool list: {list(TOOLS)}')
+
 def main():
     parser = argparse.ArgumentParser(description='Checks if patches can be applied')
-    parser.add_argument('tool', help='suckless tool name to check patches on')
+    parser.add_argument('tool', type=checkTool, help='suckless tool name to check patches on')
     parser.add_argument('-p', '--patches', metavar='patch_name', default='all', dest='patches', help='list of patches to check seperated by a comma, defaults "all"')
     parser.add_argument('-o', '--output', metavar='file', dest='output')
     parser.add_argument('--tool', dest='tool_path', help='specify the location of the tool repo')
@@ -136,9 +143,6 @@ def main():
     if not args.sites_path:
         args.sites_path = os.path.join(dname, SITES)
     
-
-    if args.tool not in TOOLS:
-        raise ValueError(f'{args.tool} is not in the tool list: {list(TOOLS)}')
 
     # Repo management
     cloneRepo(args.tool_path, f'{SUCKLESS}{args.tool}')
