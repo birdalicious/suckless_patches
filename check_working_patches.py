@@ -143,6 +143,7 @@ def main():
     parser = argparse.ArgumentParser(description='Checks if patches can be applied')
     parser.add_argument('tool', type=checkTool, help='suckless tool name to check patches on')
     parser.add_argument('-p', '--patches', metavar='patch_name', default='all', dest='patches', help='list of patches to check seperated by a comma, defaults "all"')
+    parser.add_argument('--diff', const=True, action='store_const', dest='diff', help='check and list if every diff file for each patch works')
     parser.add_argument('-o', '--output', metavar='file', dest='output')
     parser.add_argument('--tool', dest='tool_path', help='specify the location of the tool repo')
     parser.add_argument('--commit', dest='commit', metavar='short_hash', default='master', help='specify the commit/tag of the tool to check the patches on')
@@ -178,12 +179,16 @@ def main():
     for path in patchList:
         patch = os.path.basename(path)
         works = False
+
+        print(patch)
         for diff in listDiffPaths(path):
-            if diffWorks(diff, args.tool_path):
-                works = True
+            diffWorking = diffWorks(diff, args.tool_path)
+            works = True if diffWorking else works
+            if args.diff:
+                print(f'\t{os.path.basename(diff)} {diffWorking}')
+            elif works:
                 break
         patchWorksDict[patch] = works
-        print(patch, works)
     
     # Output
     with open(args.output, "w") as f:
