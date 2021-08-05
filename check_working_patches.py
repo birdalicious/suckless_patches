@@ -31,7 +31,6 @@ def git_reset_clean(path):
 
     os.chdir(cwd)
 
-
 # Path to repo to get the short hash of
 def git_get_shorthash(path):
     cwd = os.getcwd()
@@ -42,6 +41,16 @@ def git_get_shorthash(path):
 
     os.chdir(cwd)
     return process.communicate()[0].decode('utf-8')[:-1]
+
+# Path to repo runs the command 'git checkout {value}'
+def git_checkout(path, value):
+    cwd = os.getcwd()
+    os.chdir(path)
+
+    process = subprocess.Popen(["git", "checkout", value], stdout=subprocess.PIPE)
+    process.wait()
+
+    os.chdir(cwd)
 
 
 def cloneRepo(path, url):
@@ -136,6 +145,7 @@ def main():
     parser.add_argument('-p', '--patches', metavar='patch_name', default='all', dest='patches', help='list of patches to check seperated by a comma, defaults "all"')
     parser.add_argument('-o', '--output', metavar='file', dest='output')
     parser.add_argument('--tool', dest='tool_path', help='specify the location of the tool repo')
+    parser.add_argument('--commit', dest='commit', metavar='short_hash', default='master', help='specify the commit/tag of the tool to check the patches on')
     parser.add_argument('--sites', dest='sites_path', help='specify the location of the sites repo')
 
     args = parser.parse_args()
@@ -152,6 +162,7 @@ def main():
     cloneRepo(args.sites_path, f'{SUCKLESS}{SITES}')
     updateRepo(args.tool_path)
     updateRepo(args.sites_path)
+    git_checkout(args.tool_path, args.commit)
 
     # Set default output file
     SHORTHASH = git_get_shorthash(args.tool_path)
@@ -185,3 +196,11 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+#TODO
+# add option to print if each diff works
+# default output uses shorthash or tag
+
+#Example args
+# ./check_working_patches.py dwm --commit 6.2 --patches deck
