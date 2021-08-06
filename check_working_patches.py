@@ -2,6 +2,7 @@
 import os
 import subprocess
 import argparse
+import re
 from shutil import copyfile
 
 SUCKLESS = "git://git.suckless.org/"
@@ -41,6 +42,20 @@ def git_get_shorthash(path):
 
     os.chdir(cwd)
     return process.communicate()[0].decode('utf-8')[:-1]
+
+def git_get_tag(path):
+    cwd = os.getcwd()
+    os.chdir(path)
+    process = subprocess.Popen(["git", "describe", "--tags"], stdout=subprocess.PIPE)
+    process.wait()
+    descriptor = process.communicate()[0].decode('utf-8')[:-1]
+
+    os.chdir(cwd)
+
+    # If the current commit is the one with the tag return the tag otherwise none
+    if not re.fullmatch(r'(.+)-[0-9]+-[a-z0-9]+', descriptor):
+        return descriptor
+    return None
 
 # Path to repo runs the command 'git checkout {value}'
 def git_checkout(path, value):
@@ -167,45 +182,47 @@ def main():
 
     # Set default output file
     SHORTHASH = git_get_shorthash(args.tool_path)
+    descriptor = git_get_tag(args.tool_path)
+    descriptor = descriptor if descriptor else SHORTHASH
     if not args.output:
-        if args.patches != 'all':
-            args.output = os.path.join(dname, f'{args.tool}-patches-broken.md')
-        else:
-            args.output = os.path.join(dname, f'{args.tool}-{SHORTHASH}-broken.md')
+        file = f'{args.tool}-{descriptor}'
+        file += '-patches' if args.patches != 'all' else ''
+        file += '-broken.md'
+
+        args.output = os.path.join(dname, file)
 
     patchWorksDict = {}
     patchList = listPatchPaths(args.tool, args.sites_path) if args.patches == 'all' else [os.path.join(args.sites_path,PATCH_PATHS[args.tool], patch) for patch in args.patches.split(',')]
+    output = []
+
     # Check patchs can be applied
     for path in patchList:
         patch = os.path.basename(path)
         works = False
 
         print(patch)
+        output.append(patch)
         for diff in listDiffPaths(path):
             diffWorking = diffWorks(diff, args.tool_path)
             works = True if diffWorking else works
             if args.diff:
-                print(f'\t{os.path.basename(diff)} {diffWorking}')
+                s = f'\t{os.path.basename(diff)} {diffWorking}'
+                print(s)
+                output.append(s)
             elif works:
                 break
         patchWorksDict[patch] = works
+        if works and not args.diff:
+            output.pop()
+
     
     # Output
     with open(args.output, "w") as f:
-        for patch in sorted(list(patchWorksDict.keys())):
-            if not patchWorksDict[patch]:
-                f.writelines(f'{patch}\n')
+        for line in output:
+            f.writelines(f'{line}\n')
 
 
     print(f'\n{countBroken(patchWorksDict)}/{len(patchWorksDict.keys())} broken patches')
 
 if __name__ == '__main__':
     main()
-
-
-#TODO
-# add option to print if each diff works
-# default output uses shorthash or tag
-
-#Example args
-# ./check_working_patches.py dwm --commit 6.2 --patches deck
