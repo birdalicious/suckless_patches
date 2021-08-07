@@ -164,7 +164,6 @@ def main(
     if not sites_path:
         sites_path = os.path.join(dname, SITES)
     
-
     # Repo management
     cloneRepo(tool_path, f'{SUCKLESS}{tool}')
     cloneRepo(sites_path, f'{SUCKLESS}{SITES}')
@@ -207,7 +206,7 @@ def main(
         if works and not diff:
             outputArr.pop()
 
-    
+
     # Output
     with open(output, "w") as f:
         for line in outputArr:
