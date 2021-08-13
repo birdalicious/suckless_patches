@@ -154,7 +154,69 @@ def checkTool(tool):
         return tool
     raise ValueError(f'{tool} is not in the tool list: {list(TOOLS)}')
 
-def main():
+def main(
+    tool, patches='all', diff=False, output=None,
+    tool_path=None, commit=None, sites_path=None
+    ):
+    #defaults for paths
+    if not tool_path:
+        tool_path = os.path.join(dname, tool)
+    if not sites_path:
+        sites_path = os.path.join(dname, SITES)
+    
+
+    # Repo management
+    cloneRepo(tool_path, f'{SUCKLESS}{tool}')
+    cloneRepo(sites_path, f'{SUCKLESS}{SITES}')
+    updateRepo(tool_path)
+    updateRepo(sites_path)
+    git_checkout(tool_path, commit)
+
+    # Set default output file
+    SHORTHASH = git_get_shorthash(tool_path)
+    descriptor = git_get_tag(tool_path)
+    descriptor = descriptor if descriptor else SHORTHASH
+    if not output:
+        file = f'{tool}-{descriptor}'
+        file += '-patches' if patches != 'all' else ''
+        file += '-broken.md'
+
+        output = os.path.join(dname, file)
+
+    patchWorksDict = {}
+    patchList = listPatchPaths(tool, sites_path) if patches == 'all' else [os.path.join(sites_path,PATCH_PATHS[tool], patch) for patch in patches.split(',')]
+    outputArr = []
+
+    # Check patchs can be applied
+    for path in patchList:
+        patch = os.path.basename(path)
+        works = False
+
+        print(patch)
+        outputArr.append(patch)
+        for diffFile in listDiffPaths(path):
+            diffWorking = diffWorks(diffFile, tool_path)
+            works = True if diffWorking else works
+            if diff:
+                s = f'\t{os.path.basename(diffFile)} {diffWorking}'
+                print(s)
+                outputArr.append(s)
+            elif works:
+                break
+        patchWorksDict[patch] = works
+        if works and not diff:
+            outputArr.pop()
+
+    
+    # Output
+    with open(output, "w") as f:
+        for line in outputArr:
+            f.writelines(f'{line}\n')
+
+
+    print(f'\n{countBroken(patchWorksDict)}/{len(patchWorksDict.keys())} broken patches')
+
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Checks if patches can be applied')
     parser.add_argument('tool', type=checkTool, help='suckless tool name to check patches on')
     parser.add_argument('-p', '--patches', metavar='patch_name', default='all', dest='patches', help='list of patches to check seperated by a comma, defaults "all"')
@@ -166,63 +228,4 @@ def main():
 
     args = parser.parse_args()
 
-    #defaults for paths
-    if not args.tool_path:
-        args.tool_path = os.path.join(dname, args.tool)
-    if not args.sites_path:
-        args.sites_path = os.path.join(dname, SITES)
-    
-
-    # Repo management
-    cloneRepo(args.tool_path, f'{SUCKLESS}{args.tool}')
-    cloneRepo(args.sites_path, f'{SUCKLESS}{SITES}')
-    updateRepo(args.tool_path)
-    updateRepo(args.sites_path)
-    git_checkout(args.tool_path, args.commit)
-
-    # Set default output file
-    SHORTHASH = git_get_shorthash(args.tool_path)
-    descriptor = git_get_tag(args.tool_path)
-    descriptor = descriptor if descriptor else SHORTHASH
-    if not args.output:
-        file = f'{args.tool}-{descriptor}'
-        file += '-patches' if args.patches != 'all' else ''
-        file += '-broken.md'
-
-        args.output = os.path.join(dname, file)
-
-    patchWorksDict = {}
-    patchList = listPatchPaths(args.tool, args.sites_path) if args.patches == 'all' else [os.path.join(args.sites_path,PATCH_PATHS[args.tool], patch) for patch in args.patches.split(',')]
-    output = []
-
-    # Check patchs can be applied
-    for path in patchList:
-        patch = os.path.basename(path)
-        works = False
-
-        print(patch)
-        output.append(patch)
-        for diff in listDiffPaths(path):
-            diffWorking = diffWorks(diff, args.tool_path)
-            works = True if diffWorking else works
-            if args.diff:
-                s = f'\t{os.path.basename(diff)} {diffWorking}'
-                print(s)
-                output.append(s)
-            elif works:
-                break
-        patchWorksDict[patch] = works
-        if works and not args.diff:
-            output.pop()
-
-    
-    # Output
-    with open(args.output, "w") as f:
-        for line in output:
-            f.writelines(f'{line}\n')
-
-
-    print(f'\n{countBroken(patchWorksDict)}/{len(patchWorksDict.keys())} broken patches')
-
-if __name__ == '__main__':
-    main()
+    main(**vars(args))
