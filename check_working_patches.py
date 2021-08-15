@@ -156,7 +156,8 @@ def checkTool(tool):
 
 def main(
     tool, patches='all', diff=False, output=None,
-    tool_path=None, commit=None, sites_path=None
+    tool_path=None, commit=None, sites_path=None,
+    no_update=False
     ):
     #defaults for paths
     if not tool_path:
@@ -167,8 +168,9 @@ def main(
     # Repo management
     cloneRepo(tool_path, f'{SUCKLESS}{tool}')
     cloneRepo(sites_path, f'{SUCKLESS}{SITES}')
-    updateRepo(tool_path)
-    updateRepo(sites_path)
+    if not no_update:
+        updateRepo(tool_path)
+        updateRepo(sites_path)
     git_checkout(tool_path, commit)
 
     # Set default output file
@@ -218,12 +220,13 @@ def main(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Checks if patches can be applied')
     parser.add_argument('tool', type=checkTool, help='suckless tool name to check patches on')
-    parser.add_argument('-p', '--patches', metavar='patch_name', default='all', dest='patches', help='list of patches to check seperated by a comma, defaults "all"')
+    parser.add_argument('-p', '--patches', '--patch', metavar='patch_name', default='all', dest='patches', help='list of patches to check seperated by a comma, defaults "all"')
     parser.add_argument('--diff', const=True, action='store_const', dest='diff', help='check and list if every diff file for each patch works')
     parser.add_argument('-o', '--output', metavar='file', dest='output')
     parser.add_argument('--tool', dest='tool_path', metavar='path', help='specify the location of the tool repo')
     parser.add_argument('--commit', dest='commit', metavar='short_hash', default='master', help='specify the commit/tag of the tool to check the patches on')
     parser.add_argument('--sites', dest='sites_path', metavar='path', help='specify the location of the sites repo')
+    parser.add_argument('--no-update', dest='no_update', const=True, action='store_const', help='Prevents a git pull on the tool and sites repo')
 
     args = parser.parse_args()
 
