@@ -119,7 +119,7 @@ def diffWorks(patch_path, tool_path):
 def listPatches(tool, sites_path):
     checkTool(tool)
     patch_path = os.path.join(sites_path, PATCH_PATHS[tool])
-    return [patch for patch in os.listdir(patch_path) if os.path.isdir(os.path.join(patch_path, patch))]
+    return sorted([patch for patch in os.listdir(patch_path) if os.path.isdir(os.path.join(patch_path, patch))])
 
 def listPatchPaths(tool, sites_path):
     checkTool(tool)
