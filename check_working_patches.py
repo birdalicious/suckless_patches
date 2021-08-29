@@ -224,7 +224,7 @@ if __name__ == '__main__':
     parser.add_argument('--diff', const=True, action='store_const', dest='diff', help='check and list if every diff file for each patch works')
     parser.add_argument('-o', '--output', metavar='file', dest='output')
     parser.add_argument('--tool', dest='tool_path', metavar='path', help='specify the location of the tool repo')
-    parser.add_argument('--commit', dest='commit', metavar='short_hash', default='master', help='specify the commit/tag of the tool to check the patches on')
+    parser.add_argument('-c', '--commit', dest='commit', metavar='short_hash', default='master', help='specify the commit/tag of the tool to check the patches on')
     parser.add_argument('--sites', dest='sites_path', metavar='path', help='specify the location of the sites repo')
     parser.add_argument('--no-update', dest='no_update', const=True, action='store_const', help='Prevents a git pull on the tool and sites repo')
 
